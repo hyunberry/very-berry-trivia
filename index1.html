@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Very Berry Trivia</title>
+
+<!-- Pixelify Sans -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
+
+<!-- Playfair -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #FFC0D9;
+  font-family: 'SN Pro', sans-serif;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+body.macaroni {
+  background: url('macaroni.jpeg') repeat;
+}
+
+.screen {
+  text-align: center;
+  z-index: 2;
+}
+
+h1 {
+  font-family: 'Pixelify Sans', sans-serif;
+  text-shadow: 2px 2px 0 #ff7fb2;
+}
+
+button {
+  background: #ff7fb2;
+  border: none;
+  padding: 14px 26px;
+  border-radius: 12px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d85a91;
+  font-family: 'SN Pro', sans-serif;
+  color: white;
+}
+
+.answers button {
+  display: block;
+  margin: 10px auto;
+  width: 260px;
+}
+
+.feedback {
+  margin-top: 10px;
+}
+
+.sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: white;
+  opacity: 0.8;
+  animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+  from { transform: translateY(110vh); opacity: 0; }
+  10% { opacity: 1; }
+  to { transform: translateY(-10vh); opacity: 0; }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: black;
+  color: white;
+  font-family: 'Playfair Display', serif;
+  z-index: 10;
+}
+
+.red {
+  background: darkred;
+}
+
+.error {
+  background: black;
+  color: black;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+.error-box {
+  font-family: 'Times New Roman', serif;
+  font-weight: bold;
+  text-align: left;
+}
+
+.error-box h2 {
+  margin: 0;
+}
+
+.miku {
+  position: center;
+  width: 280px;
+}
+</style>
+</head>
+<body>
+
+<audio id="bgm" src="bgm.mp3" loop></audio>
+
+<div id="menu" class="screen">
+  <h1>Very Berry Trivia</h1>
+  <button onclick="startGame()">Start!</button>
+  <p>How to play: Answer the questions correctly! There are 15 questions in total.</p>
+</div>
+
+<div id="game" class="screen" style="display:none">
+  <h2 id="question"></h2>
+  <div id="answers" class="answers"></div>
+  <div id="feedback" class="feedback"></div>
+</div>
+
+<div id="win" class="screen" style="display:none">
+  <h1>You win!!</h1>
+  <button onclick="toMenu()">Main Menu</button>
+</div>
+
+<script>
+const bgm = document.getElementById('bgm');
+
+for (let i = 0; i < 40; i++) {
+  const s = document.createElement('div');
+  s.className = 'sparkle';
+  s.style.left = Math.random() * 100 + 'vw';
+  s.style.animationDuration = 4 + Math.random() * 6 + 's';
+  document.body.appendChild(s);
+}
+
+let q = 0;
+let redSeen = false;
+
+const questions = [
+  { q:'#1 How many Crypton Vocaloids are there?', a:['Five','Seven','Six','Four'], c:2 },
+  { q:'#2 How many SpongeBob seasons are there as of February 2026?', a:['10','12','18','15'], c:3 },
+  { q:'#3 According to Shay\'s Carrd (How else did you get here?) who is her idol?', a:['SpongeBob','Hyunjin','Lady Gaga','Jim Carrey specifically as The Grinch'], c:1 },
+  { q:'#4 Let\'s go on a date. Where do I wanna take you?', a:['My house','A fancy restaurant','The arcade','Nowhere'], c:3, special:'nowhere' },
+  { q:'#5 What is 1 + 4 + 3?', a:['10','8','32','55'], c:1 },
+  { q:'#6 Which of these is NOT basic dinner table etiquette?', a:['No phones','Chew with your mouth closed','No meowing','No napkins'], c:3 },
+  { q:'#7 Are you alone?', a:['Yes','No','I don\'t know','Am I?'], c:null, stop:true },
+  { q:'#8 What would you like to eat for dinner today?', a:['A whole jar of mayonnaise','Mushroom soup','Raw fish','Cheeseburger'], c:3 },
+  { q:'#8 How are you feeling today?', a:['Happy','Sleepy','Angry','Afraid'], c:3, mood:true },
+  { q:'#9 What is Shay\'s favorite flavor?', a:['Strawberry','Lemon','Grapefruit','Beef'], c:0, gross:2 },
+  { q:'#10 When was the United States Constitution written?', a:['1802','1710','1717','1787'], c:3 },
+  { q:'#11 Are you an idiot?', a:['Yes','Yes','Yes','Yes'], c:null },
+  { q:'#12 What is the best color?!?!?!?1', a:['Blue','Green','Pink','Red'], c:2, red:true },
+  { q:'#13 Fill in the blank: You\'re my __, my little __!', a:['Princess','Pony','Soda pop','ÆË44ĄĊĨ67ŇŇË528000'], c:2 },
+  { q:'#14 Almost done! If you were on a desert island, what one thing would you bring?', a:['My phone','My wallet','My clothes','A helicopter'], c:3, video:true },
+  { q:'#15 Did you like this game?', a:['Yes','No','Yes','Yes'], c:1, error:true }
+];
+
+function startGame() {
+  menu.style.display='none';
+  win.style.display='none';
+  game.style.display='block';
+  q = 0;
+  bgm.play();
+  loadQuestion();
+}
+
+function loadQuestion() {
+  feedback.textContent='';
+  answers.innerHTML='';
+  question.textContent = questions[q].q;
+
+  questions[q].a.forEach((text,i)=>{
+    const b=document.createElement('button');
+    b.textContent=text;
+    b.onclick=()=>answer(i);
+    answers.appendChild(b);
+  });
+}
+
+function answer(i) {
+  const cur=questions[q];
+
+  if (cur.special && i===cur.c) {
+    bgm.pause();
+    showImage('nowhere.jpg',3000, next);
+    return;
+  }
+
+  if (cur.stop) {
+    bgm.pause();
+    next();
+    bgm.play();
+    return;
+  }
+
+  if (cur.mood && i!==cur.c) {
+    bgm.pause();
+    const texts=['Are you sure?','Goodnight.','Why are you so angry?'];
+    showOverlay(texts[i]);
+    return;
+  }
+
+  if (cur.red && i===3 && !redSeen) {
+    redSeen=true;
+    bgm.pause();
+    showOverlay('Why?',true);
+    return;
+  }
+
+  if (cur.gross && i===cur.gross) {
+    feedback.textContent="That's disgusting. Who do you take me for?";
+    return;
+  }
+
+  if (cur.video && i===cur.c) {
+    bgm.pause();
+    showVideo('helicopter.mp4', next);
+    return;
+  }
+
+  if (cur.error && i!==cur.c) {
+    bgm.pause();
+    showError();
+    return;
+  }
+
+  if (cur.c===null || i===cur.c) {
+    feedback.textContent='You got it!';
+    setTimeout(next,1000);
+  } else {
+    feedback.textContent='Oops! That\'s not right.';
+    setTimeout(()=>feedback.textContent='',1000);
+  }
+}
+
+function next(){ q++; q>=questions.length? winGame(): loadQuestion(); }
+
+function winGame(){ bgm.pause();bgm.currentTime = 0; game.style.display='none'; win.style.display='block'; }
+
+function toMenu(){
+  window.location.href = "index2.html";
+}
+
+function showOverlay(text,red=false){
+  const o=document.createElement('div');
+  o.className='overlay'+(red?' red':'');
+  o.textContent=text;
+  document.body.appendChild(o);
+  setTimeout(()=>{ o.remove(); bgm.play(); },3000);
+}
+
+function showImage(src,time,cb){
+  const o=document.createElement('div');
+  o.className='overlay';
+  const i=document.createElement('img'); i.src=src;
+  o.appendChild(i); document.body.appendChild(o);
+  setTimeout(()=>{ o.remove(); bgm.play(); cb(); },time);
+}
+
+function showVideo(src,cb){
+  const o=document.createElement('div'); o.className='overlay';
+  const v=document.createElement('video'); v.src=src; v.autoplay=true;
+  o.appendChild(v); document.body.appendChild(o);
+  v.onended=()=>{ o.remove(); bgm.play(); cb(); };
+}
+
+function showError(){
+  const o=document.createElement('div'); o.className='overlay error';
+  const box=document.createElement('div'); box.className='error-box';
+  box.innerHTML='<h2></p>';
+  o.appendChild(box); document.body.appendChild(o);
+
+  setTimeout(()=>{
+    const m=document.createElement('img'); m.src='miku.png'; m.className='miku'; o.appendChild(m);
+  },3000);
+
+  setTimeout(()=>{ o.remove(); bgm.play(); },6000);
+}
+</script>
+</body>
+</html>

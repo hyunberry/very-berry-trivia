@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Very Berry Trivia...?</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
+
+<style>
+body{
+ margin:0;min-height:100vh;
+ background:url('bliss.png') center/cover no-repeat;
+ color:white;font-family:'SN Pro',sans-serif;
+ display:flex;justify-content:center;align-items:center;
+ overflow:hidden;
+}
+.screen{text-align:center}
+button{background:#ff7fb2;border:none;padding:14px 26px;
+border-radius:12px;font-size:20px;color:white}
+.overlay{position:fixed;inset:0;background:black;display:flex;justify-content:center;align-items:center;z-index:10}
+</style>
+</head>
+<body>
+
+<audio id="bgm" src="kelp.mp3" loop></audio>
+
+<div id="menu" class="screen">
+<h1>Very Berry Trivia...?</h1>
+<button onclick="startGame()">Start!</button>
+</div>
+
+<div id="game" class="screen" style="display:none">
+<h2 id="question"></h2>
+<div id="answers"></div>
+</div>
+
+<script>
+const bgm=document.getElementById('bgm');
+let q=0;
+
+const questions=[
+ {q:"#4 Let's go on a date. Where do I wanna take you?",a:['Nowhere'],video:true},
+ {q:"",silent:true},
+ {q:"I can see you.",a:["You're wrong.","You're wrong."],black:true},
+ {q:"#13 Fill the blank",a:["Soda pop"],music:'ohnokelp.mp3'},
+ {q:"#14 Desert island?",a:["A helicopter"],freeze:true}
+];
+
+function startGame(){
+ menu.style.display='none';
+ game.style.display='block';
+ bgm.play();
+ load();
+}
+
+function load(){
+ answers.innerHTML='';
+ const cur=questions[q];
+ question.textContent=cur.q;
+
+ if(cur.silent){
+  bgm.pause();
+  answers.innerHTML='';
+  setTimeout(()=>{bgm.play();next()},5000);
+  return;
+ }
+
+ cur.a.forEach(()=>{
+  const b=document.createElement('button');
+  b.textContent=cur.a[0];
+  b.onclick=()=>answer();
+  answers.appendChild(b);
+ });
+}
+
+function answer(){
+ const cur=questions[q];
+
+ if(cur.video){
+  bgm.pause();
+  showVideo('spongebob.mp4',next);
+  return;
+ }
+
+ if(cur.black){
+  bgm.pause();
+  document.body.style.background='black';
+  setTimeout(()=>{
+   document.body.style.background="url('bliss.png')";
+   bgm.play();
+   next();
+  },3000);
+  return;
+ }
+
+ if(cur.music){
+  bgm.src=cur.music;bgm.play();
+  next();return;
+ }
+
+ if(cur.freeze){
+  bgm.pause();
+  setTimeout(()=>{
+   document.body.style.background="url('nowhere3.jpg')";
+   const h=new Audio('hello.mp3');h.play();
+   setTimeout(()=>window.location.href="index4.html",4000);
+  },7000);
+ }
+}
+
+function next(){q++;load();}
+
+function showVideo(src,cb){
+ const o=document.createElement('div');o.className='overlay';
+ const v=document.createElement('video');v.src=src;v.autoplay=true;
+ o.appendChild(v);document.body.appendChild(o);
+ v.onended=()=>{o.remove();cb();}
+}
+</script>
+</body>
+</html>
